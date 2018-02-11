@@ -12,7 +12,7 @@ import numpy as np
 
 # ----------------------------------------------------------------------
 
-from pytriqs.gf import MeshImTime, MeshProduct
+from pytriqs.gf import MeshImTime, MeshProduct, MeshPoint, Idx
 
 # ----------------------------------------------------------------------
 
@@ -53,14 +53,13 @@ class TriqsExactDiagonalization(object):
 
         assert( type(g_tau.mesh) == MeshImTime )
         assert( self.beta == g_tau.mesh.beta )
-        assert( g_tau.target_shape == (1, 1) )
     
         op1_mat = self.rep.sparse_matrix(op1)
         op2_mat = self.rep.sparse_matrix(op2)        
 
         tau = np.array([tau.value for tau in g_tau.mesh])
  
-        g_tau.data[:, 0, 0] = \
+        g_tau.data[:] = \
             self.ed.get_tau_greens_function_component(
                 tau, op1_mat, op2_mat)
 
@@ -70,14 +69,13 @@ class TriqsExactDiagonalization(object):
     def set_g2_iwn(self, g_iwn, op1, op2):
 
         assert( self.beta == g_iwn.mesh.beta )
-        assert( g_iwn.target_shape == (1, 1) )
     
         op1_mat = self.rep.sparse_matrix(op1)
         op2_mat = self.rep.sparse_matrix(op2)        
 
         iwn = np.array([iwn.value for iwn in g_iwn.mesh])
         
-        g_iwn.data[:, 0, 0] = \
+        g_iwn.data[:] = \
             self.ed.get_frequency_greens_function_component(
                 iwn, op1_mat, op2_mat, self.xi(g_iwn.mesh))
 
@@ -92,7 +90,7 @@ class TriqsExactDiagonalization(object):
             op1_mat, op2_mat, self.xi(g.mesh), Norder=tail.order_max)
 
         for idx in xrange(tail.order_max):
-            tail[idx+1][:] = raw_tail[idx]
+            tail[idx+1] = raw_tail[idx]
 
     # ------------------------------------------------------------------
     def xi(self, mesh):
@@ -103,8 +101,6 @@ class TriqsExactDiagonalization(object):
     # ------------------------------------------------------------------
     def set_g3_tau(self, g3_tau, op1, op2, op3):
         
-        assert( g3_tau.target_shape == (1,1,1,1) )
-
         op1_mat = self.rep.sparse_matrix(op1)
         op2_mat = self.rep.sparse_matrix(op2)        
         op3_mat = self.rep.sparse_matrix(op3)
@@ -120,7 +116,7 @@ class TriqsExactDiagonalization(object):
                 taus_perm, ops_perm_mat)
 
             for idx, d in zip(idxs, data):
-                g3_tau[list(idx)][:] = perm_sign * d
+                g3_tau[Idx(idx[0]), Idx(idx[1])][:] = perm_sign * d
 
     # ------------------------------------------------------------------
     def set_g40_tau(self, g40_tau, g_tau):
@@ -129,13 +125,11 @@ class TriqsExactDiagonalization(object):
         #assert( g_tau.target_shape == g40_tau.target_shape )
 
         for t1, t2, t3 in g40_tau.mesh:
-            g40_tau[t1, t2, t3][:] = \
+            g40_tau[t1, t2, t3] = \
                 g_tau(t1-t2)*g_tau(t3.value) - g_tau(t1.value)*g_tau(t3-t2)
     
     # ------------------------------------------------------------------
     def set_g4_tau(self, g4_tau, op1, op2, op3, op4):
-        
-        assert( g4_tau.target_shape == (1,1,1,1) )
 
         op1_mat = self.rep.sparse_matrix(op1)
         op2_mat = self.rep.sparse_matrix(op2)        
@@ -153,7 +147,7 @@ class TriqsExactDiagonalization(object):
                 taus_perm, ops_perm_mat)
 
             for idx, d in zip(idxs, data):
-                g4_tau[list(idx)][:] = perm_sign * d
+                g4_tau[MeshPoint(*idx)] = perm_sign * d
 
     # ------------------------------------------------------------------
    
